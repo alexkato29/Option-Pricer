@@ -90,9 +90,19 @@ class Option:
     @staticmethod
     def n_prime(z):
         # N'(d1) = (1/sqrt(2pi))*exp(-d1^2/2)
+        # Integral is just undone. N' is quite trivial
         return (1 / math.sqrt(2 * math.pi)) * math.exp(-math.pow(z, 2) / 2)
 
-    # Division by 100 for rho and vega is to make the change relative to one percentage point
+    """
+    Computation is quite long for some but relatively simple.
+    
+    (All of the following are partials)
+    delta = dC/dS
+    gamma = d^2C/dS^2
+    theta = dC/dT
+    vega = dC/dSigma
+    rho = dC/dR
+    """
     def compute_greeks(self, debug):
         d1 = self.get_d1()
         d2 = self.get_d2()
