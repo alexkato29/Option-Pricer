@@ -3,7 +3,7 @@ import math
 
 class Option:
     # Options REQUIRE: a type (call or put), a ticker, strike price, and expiration (in days to exp)
-    def __init__(self, type, underlying, strike, time, rate, vol, div, debug=False):
+    def __init__(self, type, underlying, strike, time, rate, div, vol=0, price=0, debug=False):
         self.type = type
         self.underlying = underlying
         self.strike = strike
@@ -11,7 +11,14 @@ class Option:
         self.rate = rate / 100
         self.vol = vol / 100
         self.div = div / 100
-        self.price = self.get_price(debug)
+
+        if vol == 0 and price != 0:
+            self.price = price
+            self.vol = self.compute_vol()
+        else:
+            self.vol = vol
+            self.price = self.get_price(debug)
+
         self.greeks = self.compute_greeks(debug)  # Delta, Gamma, Vega, Theta, Rho
 
     def __str__(self):
@@ -131,3 +138,28 @@ class Option:
             rho = (-1 / 100) * self.strike * self.time * math.exp(-self.rate * self.time) * self.n(-d2)
 
         return [delta, gamma, vega, theta, rho]
+
+    # Because of the nature of the PDE, it is extremely difficult to solve for sigma.
+    # Thus, it is quicker to simply guess and check. Uses 0% and 500% for upper and lower checking bounds
+    def compute_vol(self):
+        lower = 0.0
+        upper = 5.0
+
+        vol = upper - lower
+        self.vol = vol
+        implied_price = round(self.get_price(), 2)
+
+        while (implied_price != self.price) and (upper >= lower):
+            if (implied_price < self.price) and self.is_call():
+                lower = vol
+            else:
+                upper = vol
+
+            vol = upper - ((upper - lower) / 2)
+            self.vol = vol
+            implied_price = round(self.get_price(), 2)
+
+        if upper <= lower:
+            return -1
+
+        return round(vol, 2)
